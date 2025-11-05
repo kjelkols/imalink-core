@@ -68,7 +68,6 @@ packages = ["src/imalink_core"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "--cov=imalink_core --cov-report=term-missing --cov-report=html"
 
 [tool.black]
 line-length = 100
