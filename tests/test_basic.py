@@ -9,7 +9,7 @@ from pathlib import Path
 from imalink_core import (
     ExifExtractor,
     PreviewGenerator,
-    Photo,
+    CorePhoto,
     ImageValidator,
     process_image,
     __version__
@@ -46,8 +46,8 @@ def test_image_validator():
 
 
 def test_photo_model():
-    """Test Photo model creation and serialization"""
-    photo = Photo(
+    """Test CorePhoto model creation and serialization"""
+    photo = CorePhoto(
         hothash="abc123def456",
         primary_filename="test.jpg",
         width=1920,
@@ -62,7 +62,7 @@ def test_photo_model():
     assert isinstance(data, dict)
     assert data['hothash'] == "abc123def456"
     
-    photo2 = Photo.from_dict(data)
+    photo2 = CorePhoto.from_dict(data)
     assert photo2.hothash == photo.hothash
     assert photo2.primary_filename == photo.primary_filename
 

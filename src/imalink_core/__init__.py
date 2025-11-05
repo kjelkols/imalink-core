@@ -30,7 +30,7 @@ from .preview import ColdPreview, HotPreview, HothashCalculator, PreviewGenerato
 from .image import FormatDetector, ImageFormat
 
 # Models
-from .models import ImageFile, ImportResult, Photo, PhotoFormat
+from .models import CoreImageFile, ImportResult, CorePhoto, PhotoFormat
 
 # Validation
 from .validation import ImageValidator
@@ -54,8 +54,8 @@ __all__ = [
     "ImageFormat",
     "FormatDetector",
     # Models
-    "Photo",
-    "ImageFile",
+    "CorePhoto",
+    "CoreImageFile",
     "PhotoFormat",
     "ImportResult",
     # Validation

@@ -9,7 +9,7 @@ from typing import List, Callable, Optional
 
 from .metadata.exif_extractor import ExifExtractor
 from .models.import_result import ImportResult
-from .models.photo import Photo
+from .models.photo import CorePhoto
 from .preview.generator import PreviewGenerator
 from .validation.image_validator import ImageValidator
 
@@ -56,8 +56,8 @@ def process_image(image_path: Path) -> ImportResult:
         # Generate previews
         hotpreview, coldpreview = PreviewGenerator.generate_both(image_path)
         
-        # Build Photo object
-        photo = Photo(
+        # Build CorePhoto object
+        photo = CorePhoto(
             hothash=hotpreview.hothash,
             hotpreview_base64=hotpreview.base64,
             hotpreview_width=hotpreview.width,

@@ -21,7 +21,7 @@ class PhotoFormat(Enum):
 
 
 @dataclass
-class ImageFile:
+class CoreImageFile:
     """
     Represents a file associated with a photo.
     
@@ -43,7 +43,7 @@ class ImageFile:
         return data
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ImageFile':
+    def from_dict(cls, data: Dict[str, Any]) -> 'CoreImageFile':
         """Create from dictionary (e.g., API response)"""
         # Parse format enum
         if 'format' in data and isinstance(data['format'], str):
@@ -57,7 +57,7 @@ class ImageFile:
 
 
 @dataclass
-class Photo:
+class CorePhoto:
     """
     Core Photo model - canonical representation in ImaLink.
     
@@ -79,7 +79,7 @@ class Photo:
     
     # Files
     primary_filename: Optional[str] = None
-    image_files: List[ImageFile] = field(default_factory=list)
+    image_files: List[CoreImageFile] = field(default_factory=list)
     
     # Timestamps
     taken_at: Optional[datetime] = None
@@ -141,15 +141,15 @@ class Photo:
         return data
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Photo':
+    def from_dict(cls, data: Dict[str, Any]) -> 'CorePhoto':
         """
-        Create Photo from dictionary (e.g., API response).
+        Create CorePhoto from dictionary (e.g., API response).
         
         Args:
             data: Dictionary with photo data
             
         Returns:
-            Photo object
+            CorePhoto object
         """
         # Make a copy to avoid modifying original
         data = data.copy()
@@ -162,10 +162,10 @@ class Photo:
                 except ValueError:
                     data[field_name] = None
         
-        # Parse ImageFile objects
+        # Parse CoreImageFile objects
         if 'image_files' in data and isinstance(data['image_files'], list):
             data['image_files'] = [
-                ImageFile.from_dict(f) if isinstance(f, dict) else f
+                CoreImageFile.from_dict(f) if isinstance(f, dict) else f
                 for f in data['image_files']
             ]
         

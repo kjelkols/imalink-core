@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ..metadata.exif_extractor import BasicMetadata, CameraSettings
-from .photo import Photo
+from .photo import CorePhoto
 
 
 @dataclass
@@ -20,7 +20,7 @@ class ImportResult:
     """
     success: bool
     hothash: Optional[str] = None
-    photo: Optional[Photo] = None
+    photo: Optional[CorePhoto] = None
     metadata: Optional[BasicMetadata] = None
     camera_settings: Optional[CameraSettings] = None
     hotpreview_base64: Optional[str] = None

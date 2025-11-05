@@ -40,14 +40,14 @@ from imalink_core import process_image
 result = process_image(Path("photo.jpg"))
 
 if result.success:
-    photo = result.photo
+    photo = result.photo  # CorePhoto object
     print(f"Hothash: {photo.hothash}")
     print(f"Hotpreview: {photo.hotpreview_width}x{photo.hotpreview_height}px")
     print(f"Taken at: {result.metadata.taken_at}")
     print(f"Camera: {result.metadata.camera_make} {result.metadata.camera_model}")
     print(f"GPS: {result.metadata.gps_latitude}, {result.metadata.gps_longitude}")
     
-    # Hotpreview is embedded in Photo object
+    # Hotpreview is embedded in CorePhoto object
     if photo.hotpreview_base64:
         print(f"Hotpreview ready for API transmission: {len(photo.hotpreview_base64)} bytes")
 else:
@@ -134,9 +134,9 @@ imalink_core/
 The `Photo` model is the canonical representation shared across the ImaLink ecosystem:
 
 ```python
-from imalink_core.models import Photo
+from imalink_core.models import CorePhoto
 
-photo = Photo(
+photo = CorePhoto(
     hothash="abc123...",
     primary_filename="IMG_1234.jpg",
     taken_at="2025-01-15T14:30:00Z",
@@ -156,7 +156,7 @@ photo = Photo(
 data = photo.to_dict()
 
 # Load from dict (e.g., API response)
-photo = Photo.from_dict(data)
+photo = CorePhoto.from_dict(data)
 ```
 
 ## 🧪 Testing
