@@ -1,5 +1,57 @@
 # CorePhoto Model Design - Photographer's Perspective
 
+## Model Architecture
+
+ImaLink has three distinct photo models with different purposes:
+
+### 1. CorePhoto (imalink-core library)
+**Purpose**: Complete data extractable from image file
+
+**Includes**:
+- Hotpreview (150x150) - small thumbnail for gallery view
+- Coldpreview (1920x1080) - larger preview for detail view
+- All EXIF metadata (camera, GPS, settings)
+- File information
+
+**Used by**: Import process, batch processing, backup/restore
+
+**Does NOT include**: Database fields (id, user_id), user organization (rating, title, tags)
+
+### 2. Photo (backend database model)
+**Purpose**: Persisted photo data in database
+
+**Includes**:
+- Database fields (id, user_id, timestamps)
+- Hotpreview (stored in DB or S3) - small enough
+- Metadata copied from CorePhoto (camera, GPS, etc.)
+- User organization (rating, title, description, tags)
+
+**Does NOT include**: Coldpreview (too large ~100-200KB, generated on-demand)
+
+**Sent to frontend**: As JSON API response
+
+### 3. Coldpreview Strategy
+**Problem**: Too large to store in database (100-200KB per photo)
+
+**Solution**: 
+- Generated on-demand from original file
+- Or cached separately (Redis, S3, local storage)
+- Frontend fetches via separate endpoint: `GET /api/photos/{id}/coldpreview`
+
+**Why this works**:
+- Coldpreview only needed for detail view (not gallery)
+- Can regenerate from original file when needed
+- Keeps database queries fast
+- Reduces storage costs
+
+### Key Design Principle
+CorePhoto is a "rich" object containing ALL extractable data. Backend chooses what to persist based on practical concerns (size, usage patterns). This gives maximum flexibility:
+- Import process has access to all data
+- Backend optimizes storage
+- Coldpreview can be regenerated when necessary
+
+---
+
 ## Problem Statement
 
 As a photographer, I need to:
@@ -10,7 +62,7 @@ As a photographer, I need to:
 5. **Handle different photo origins** - Digital camera, scanned slides, screenshots, web downloads
 6. **Distinguish camera from scanner** - Scanner model is not the camera that took the photo
 7. **Handle time/GPS inaccuracies** - Wrong camera clock, GPS drift, timezone issues
-8. **Group related photos** - Bursts, versions, composite images, film rolls
+8. **Group related photos** - Bursts, versions, film rolls
 9. **Track edits and derivations** - Original vs processed, crops, different versions
 10. **Manage professional metadata** - Copyright, licensing, client work
 
@@ -247,7 +299,16 @@ class CaptureInfo:
 @dataclass
 class CorePhoto:
     """
-    Core Photo model with source tracking and precision metadata.
+    Core Photo model - complete data extractable from image file.
+    
+    Used by imalink-core during import/processing. Contains ALL data that can
+    be extracted from the image file, including both hotpreview and coldpreview.
+    
+    Backend Photo model will be different:
+    - Includes: hotpreview (small, stored in DB)
+    - Excludes: coldpreview (large, generated on-demand)
+    - Adds: user fields (rating, title, description, tags)
+    - Adds: database fields (id, user_id, timestamps)
     
     Design principles:
     1. Always track data source (EXIF, user, derived)
@@ -290,20 +351,20 @@ class CorePhoto:
     # === CAPTURE INFO (How was this photo made?) ===
     capture: CaptureInfo = field(default_factory=CaptureInfo)
     
-    # === USER ORGANIZATION ===
-    rating: Optional[int] = None  # 0-5 stars
-    title: Optional[str] = None   # User title
-    description: Optional[str] = None  # User description
-    tags: List[str] = field(default_factory=list)
+    # === USER ORGANIZATION (NOT in CorePhoto, only in backend Photo model) ===
+    # rating: Optional[int] = None  # Backend only
+    # title: Optional[str] = None   # Backend only
+    # description: Optional[str] = None  # Backend only
+    # tags: List[str] = field(default_factory=list)  # Backend only
     
     # === FLAGS ===
     has_raw_companion: bool = False
-    is_favorite: bool = False
+    is_favorite: bool = False  # Note: Might move to backend only
     
-    # === BACKEND FIELDS ===
-    id: Optional[int] = None
-    user_id: Optional[int] = None
-    import_session_id: Optional[int] = None
+    # === BACKEND DATABASE FIELDS (NOT in CorePhoto) ===
+    # id: Optional[int] = None  # Backend assigns DB ID
+    # user_id: Optional[int] = None  # Backend manages ownership
+    # import_session_id: Optional[int] = None  # Backend tracks imports
 ```
 
 ## Benefits
@@ -314,6 +375,14 @@ class CorePhoto:
 4. **Search**: Can filter by "exact GPS only" or "approximate location OK"
 5. **UI**: Can show different icons/indicators based on precision
 6. **Trust**: Photographer knows what's camera data vs guesses
+
+## Model Separation Benefits
+
+1. **CorePhoto completeness**: Contains ALL extractable data for maximum flexibility
+2. **Backend optimization**: Stores only what's practical (hotpreview yes, coldpreview no)
+3. **Clear boundaries**: File data vs user data vs database data
+4. **Regeneration capability**: Can recreate coldpreview from original file when needed
+5. **Storage efficiency**: 10K photos with coldpreview = 1.5GB saved in database
 
 ## UI Examples
 
@@ -510,12 +579,8 @@ altitude_accuracy_meters: Optional[float] = None
 ```python
 class GroupType(Enum):
     BURST = "burst"           # Rapid sequence (sports/action)
-    PANORAMA = "panorama"     # Source images for panorama
-    HDR = "hdr"              # Bracketed exposures
-    FOCUS_STACK = "focus_stack"  # Focus stacking
-    TIME_LAPSE = "time_lapse"    # Time-lapse sequence
-    FILM_ROLL = "film_roll"      # Images from same film roll
-    VERSION = "version"          # Same photo, different edits
+    FILM_ROLL = "film_roll"   # Images from same film roll
+    VERSION = "version"       # Same photo, different edits
     
 @dataclass
 class PhotoGroup:
@@ -638,26 +703,7 @@ flag_status: Optional[str] = None  # Custom flags
 - "Hide rejected" during culling
 - Color code by category/priority
 
-### 8. Composite Images
-**Problem**: Panorama/HDR made from multiple sources
-
-```python
-# Extend PhotoOrigin:
-class PhotoOrigin(Enum):
-    # ... existing ...
-    PANORAMA = "panorama"      # Stitched panorama
-    HDR = "hdr"               # HDR composite  
-    FOCUS_STACK = "focus_stack"  # Focus stacking result
-    VIDEO_FRAME = "video_frame"  # Extracted from video
-
-# Add to CaptureInfo:
-composite_source_hashes: List[str] = field(default_factory=list)
-composite_method: Optional[str] = None  # "Photoshop Photomerge", "PTGui"
-```
-
-**Use case**: Link composite to source images, show "made from 5 photos"
-
-### 9. Keywords & IPTC
+### 8. Keywords & IPTC
 **Problem**: Professional metadata standards (IPTC)
 
 ```python
@@ -669,7 +715,7 @@ subject_code: Optional[str] = None
 
 **Use case**: Standard metadata for stock photography, journalism
 
-### 10. Camera Settings Edge Cases
+### 9. Camera Settings Edge Cases
 **Problem**: Not all EXIF is reliable
 
 ```python
@@ -701,12 +747,13 @@ is_exif_synthesized: bool = False  # EXIF added by software (not camera)
 9. Processing/derivation tracking
 10. Professional metadata
 11. Selection tools (pick/reject/color labels)
-12. Composite image tracking
 
 ### Phase 4 (Nice to Have)
-13. IPTC/keywords (standard compliance)
-14. EXIF confidence scoring
-15. Advanced grouping types
+12. IPTC/keywords (standard compliance)
+13. EXIF confidence scoring
+14. Advanced version tracking
+
+**Note**: Composite images (panorama, HDR, focus stacking) are handled by backend PhotoStack, not imalink-core. Core only stores the final processed results with appropriate metadata.
 
 ## Migration Strategy
 
