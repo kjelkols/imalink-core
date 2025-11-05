@@ -72,6 +72,11 @@ class Photo:
     # Identity (required)
     hothash: str  # SHA256 of hotpreview (unique ID)
     
+    # Preview (150x150 JPEG thumbnail)
+    hotpreview_base64: Optional[str] = None  # Base64-encoded JPEG
+    hotpreview_width: Optional[int] = None   # Actual width after resize
+    hotpreview_height: Optional[int] = None  # Actual height after resize
+    
     # Files
     primary_filename: Optional[str] = None
     image_files: List[ImageFile] = field(default_factory=list)

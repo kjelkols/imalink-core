@@ -59,6 +59,9 @@ def process_image(image_path: Path) -> ImportResult:
         # Build Photo object
         photo = Photo(
             hothash=hotpreview.hothash,
+            hotpreview_base64=hotpreview.base64,
+            hotpreview_width=hotpreview.width,
+            hotpreview_height=hotpreview.height,
             primary_filename=image_path.name,
             taken_at=metadata.taken_at,
             width=metadata.width,
