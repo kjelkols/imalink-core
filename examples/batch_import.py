@@ -37,7 +37,7 @@ def main():
         else:
             print(f"[{current}/{total}] ✗ {result.error}")
     
-    # Process all images
+    # Process all images (default 1920px coldpreview)
     results = batch_process(images, progress_callback=on_progress)
     
     # Summary

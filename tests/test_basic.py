@@ -69,7 +69,7 @@ def test_photo_model():
 
 def test_process_image_nonexistent():
     """Test process_image with non-existent file"""
-    result = process_image(Path("nonexistent.jpg"))
+    result = process_image(Path("nonexistent.jpg"), coldpreview_max_size=1920)
     
     assert not result.success
     assert result.error is not None

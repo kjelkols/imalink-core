@@ -14,19 +14,24 @@ from .preview.generator import PreviewGenerator
 from .validation.image_validator import ImageValidator
 
 
-def process_image(image_path: Path) -> ImportResult:
+def process_image(
+    image_path: Path,
+    coldpreview_max_size: Optional[int] = 1920
+) -> ImportResult:
     """
     High-level function to process a single image.
     
     Does everything:
     1. Validates file
     2. Extracts metadata (basic + camera settings)
-    3. Generates previews (hot + cold)
+    3. Generates previews (hot + optional cold)
     4. Calculates hothash
     5. Returns ImportResult with Photo object
     
     Args:
         image_path: Path to image file
+        coldpreview_max_size: Maximum dimension for coldpreview in pixels.
+                              Default: 1920. Set to None to skip coldpreview.
         
     Returns:
         ImportResult with success status and data
@@ -35,13 +40,14 @@ def process_image(image_path: Path) -> ImportResult:
         >>> from pathlib import Path
         >>> from imalink_core import process_image
         >>> 
+        >>> # Standard with default 1920px coldpreview
         >>> result = process_image(Path("photo.jpg"))
-        >>> if result.success:
-        ...     print(f"Hothash: {result.hothash}")
-        ...     print(f"Taken at: {result.metadata.taken_at}")
-        ...     print(f"Camera: {result.photo.camera_info}")
-        ... else:
-        ...     print(f"Error: {result.error}")
+        >>> 
+        >>> # Custom size
+        >>> result = process_image(Path("photo.jpg"), coldpreview_max_size=1024)
+        >>> 
+        >>> # Skip coldpreview (only hotpreview)
+        >>> result = process_image(Path("photo.jpg"), coldpreview_max_size=None)
     """
     # Validate file
     is_valid, error = ImageValidator.validate_file(image_path)
@@ -53,8 +59,24 @@ def process_image(image_path: Path) -> ImportResult:
         metadata = ExifExtractor.extract_basic(image_path)
         camera_settings = ExifExtractor.extract_camera_settings(image_path)
         
-        # Generate previews
-        hotpreview, coldpreview = PreviewGenerator.generate_both(image_path)
+        # Generate hotpreview (always required)
+        hotpreview = PreviewGenerator.generate_hotpreview(image_path)
+        
+        # Generate coldpreview (optional)
+        if coldpreview_max_size is not None:
+            coldpreview = PreviewGenerator.generate_coldpreview(
+                image_path,
+                max_size=coldpreview_max_size
+            )
+            coldpreview_base64 = coldpreview.base64
+            coldpreview_width = coldpreview.width
+            coldpreview_height = coldpreview.height
+            coldpreview_bytes = coldpreview.bytes
+        else:
+            coldpreview_base64 = None
+            coldpreview_width = None
+            coldpreview_height = None
+            coldpreview_bytes = None
         
         # Build CorePhoto object
         photo = CorePhoto(
@@ -62,9 +84,9 @@ def process_image(image_path: Path) -> ImportResult:
             hotpreview_base64=hotpreview.base64,
             hotpreview_width=hotpreview.width,
             hotpreview_height=hotpreview.height,
-            coldpreview_base64=coldpreview.base64,
-            coldpreview_width=coldpreview.width,
-            coldpreview_height=coldpreview.height,
+            coldpreview_base64=coldpreview_base64,
+            coldpreview_width=coldpreview_width,
+            coldpreview_height=coldpreview_height,
             primary_filename=image_path.name,
             taken_at=metadata.taken_at,
             width=metadata.width,
@@ -89,7 +111,7 @@ def process_image(image_path: Path) -> ImportResult:
             metadata=metadata,
             camera_settings=camera_settings,
             hotpreview_base64=hotpreview.base64,
-            coldpreview_bytes=coldpreview.bytes,
+            coldpreview_bytes=coldpreview_bytes,
         )
     
     except Exception as e:
@@ -101,6 +123,7 @@ def process_image(image_path: Path) -> ImportResult:
 
 def batch_process(
     image_paths: List[Path],
+    coldpreview_max_size: Optional[int] = 1920,
     progress_callback: Optional[Callable[[int, int, ImportResult], None]] = None
 ) -> List[ImportResult]:
     """
@@ -108,6 +131,8 @@ def batch_process(
     
     Args:
         image_paths: List of paths to image files
+        coldpreview_max_size: Maximum dimension for coldpreview in pixels.
+                              Default: 1920. Set to None to skip coldpreview.
         progress_callback: Optional callback(current, total, result)
         
     Returns:
@@ -125,7 +150,12 @@ def batch_process(
         ...     else:
         ...         print(f"[{current}/{total}] ✗ {result.error}")
         >>> 
+        >>> # Standard with default 1920px coldpreview
         >>> results = batch_process(images, progress_callback=on_progress)
+        >>> 
+        >>> # Custom size
+        >>> results = batch_process(images, coldpreview_max_size=1024, 
+        ...                         progress_callback=on_progress)
         >>> 
         >>> successful = [r for r in results if r.success]
         >>> print(f"\\nImported {len(successful)}/{len(results)} photos")
@@ -134,7 +164,7 @@ def batch_process(
     total = len(image_paths)
     
     for i, path in enumerate(image_paths, 1):
-        result = process_image(path)
+        result = process_image(path, coldpreview_max_size=coldpreview_max_size)
         results.append(result)
         
         if progress_callback:

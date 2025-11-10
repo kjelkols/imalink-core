@@ -18,7 +18,7 @@ def main():
     print(f"Processing {image_path}...")
     print("-" * 60)
     
-    # Process the image
+    # Process the image (default 1920px coldpreview)
     result = process_image(image_path)
     
     if result.success:

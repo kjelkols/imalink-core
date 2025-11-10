@@ -40,10 +40,12 @@ class ColdPreview:
     
     Attributes:
         bytes: Raw JPEG bytes (no EXIF metadata)
+        base64: Base64-encoded string for API transmission
         width: Actual width in pixels
         height: Actual height in pixels
     """
     bytes: bytes
+    base64: str
     width: int
     height: int
 
@@ -149,9 +151,14 @@ class PreviewGenerator:
         # Convert to JPEG bytes
         buffer = BytesIO()
         img.convert("RGB").save(buffer, format="JPEG", quality=quality)
+        preview_bytes = buffer.getvalue()
+        
+        # Base64 encode for API transmission
+        preview_b64 = base64.b64encode(preview_bytes).decode()
         
         return ColdPreview(
-            bytes=buffer.getvalue(),
+            bytes=preview_bytes,
+            base64=preview_b64,
             width=width,
             height=height
         )
