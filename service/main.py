@@ -162,17 +162,31 @@ async def process_image_endpoint(
         camera_settings = ExifExtractor.extract_camera_settings_from_bytes(image_bytes)
         
         # Generate hotpreview from image
-        hotpreview = PreviewGenerator.generate_hotpreview_from_image(img)
+        try:
+            hotpreview = PreviewGenerator.generate_hotpreview_from_image(img)
+        except ValueError as e:
+            # Image too small (< 4x4 pixels)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid image: {str(e)}"
+            )
         
         # Generate coldpreview (optional)
         if coldpreview_size is not None:
-            coldpreview = PreviewGenerator.generate_coldpreview_from_image(
-                img,
-                max_size=coldpreview_size
-            )
-            coldpreview_base64 = coldpreview.base64
-            coldpreview_width = coldpreview.width
-            coldpreview_height = coldpreview.height
+            try:
+                coldpreview = PreviewGenerator.generate_coldpreview_from_image(
+                    img,
+                    max_size=coldpreview_size
+                )
+                coldpreview_base64 = coldpreview.base64
+                coldpreview_width = coldpreview.width
+                coldpreview_height = coldpreview.height
+            except ValueError as e:
+                # Image too small (< 4x4 pixels)
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid image: {str(e)}"
+                )
         else:
             coldpreview_base64 = None
             coldpreview_width = None

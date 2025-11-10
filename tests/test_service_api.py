@@ -237,6 +237,26 @@ class TestErrorHandling:
         
         assert response.status_code == 400
 
+    def test_tiny_image_rejected(self):
+        """Test that images smaller than 4x4 pixels are rejected."""
+        from PIL import Image
+        from io import BytesIO
+        
+        # Create a 3x3 pixel image
+        tiny_img = Image.new('RGB', (3, 3), color='red')
+        buffer = BytesIO()
+        tiny_img.save(buffer, format='JPEG')
+        tiny_bytes = buffer.getvalue()
+        
+        response = client.post(
+            "/v1/process",
+            files={"file": ("tiny.jpg", tiny_bytes, "image/jpeg")}
+        )
+        
+        assert response.status_code == 400
+        detail = response.json()["detail"]
+        assert "too small" in detail.lower() or "invalid" in detail.lower()
+
 
 class TestBase64Encoding:
     """Test that previews are properly Base64 encoded."""

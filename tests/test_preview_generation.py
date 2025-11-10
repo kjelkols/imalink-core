@@ -233,3 +233,51 @@ class TestPreviewQuality:
         
         # But hothash should be different (different JPEG compression)
         assert high_quality.hothash != low_quality.hothash
+
+
+class TestImageSizeValidation:
+    """Test validation of image dimensions"""
+    
+    def test_reject_tiny_image(self):
+        """Should reject images smaller than 4x4 pixels"""
+        from PIL import Image
+        from io import BytesIO
+        
+        # Create a 3x3 pixel image (too small)
+        tiny_img = Image.new('RGB', (3, 3), color='red')
+        
+        # Should raise ValueError when trying to generate preview
+        with pytest.raises(ValueError, match="Image too small"):
+            PreviewGenerator.generate_hotpreview_from_image(tiny_img)
+    
+    def test_reject_1x1_image(self):
+        """Should reject 1x1 pixel image"""
+        from PIL import Image
+        
+        # Create a 1x1 pixel image
+        single_pixel = Image.new('RGB', (1, 1), color='blue')
+        
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="Image too small"):
+            PreviewGenerator.generate_hotpreview_from_image(single_pixel)
+    
+    def test_accept_4x4_image(self):
+        """Should accept 4x4 pixel image (minimum valid size)"""
+        from PIL import Image
+        
+        # Create a 4x4 pixel image (minimum valid)
+        small_img = Image.new('RGB', (4, 4), color='green')
+        
+        # Should NOT raise - 4x4 is minimum valid size
+        hotpreview = PreviewGenerator.generate_hotpreview_from_image(small_img)
+        assert hotpreview.width == 4
+        assert hotpreview.height == 4
+    
+    def test_accept_normal_image(self):
+        """Should accept normal-sized images without issue"""
+        file_path = FIXTURES_DIR / "jpeg_basic.jpg"
+        
+        # Should work fine
+        hotpreview = PreviewGenerator.generate_hotpreview(file_path)
+        assert hotpreview.width > 0
+        assert hotpreview.height > 0

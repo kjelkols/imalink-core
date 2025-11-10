@@ -57,6 +57,26 @@ class PreviewGenerator:
     
     DEFAULT_HOT_SIZE = (150, 150)
     DEFAULT_COLD_SIZE = (1920, 1080)
+    MIN_IMAGE_SIZE = 4  # Images smaller than 4x4 are likely corrupt
+    
+    @staticmethod
+    def _validate_image_size(img: Image.Image) -> None:
+        """
+        Validate that image is large enough to be valid.
+        
+        Args:
+            img: PIL Image object
+            
+        Raises:
+            ValueError: If image is too small (likely corrupt)
+        """
+        width, height = img.size
+        if width < PreviewGenerator.MIN_IMAGE_SIZE or height < PreviewGenerator.MIN_IMAGE_SIZE:
+            raise ValueError(
+                f"Image too small: {width}x{height}px. "
+                f"Minimum size is {PreviewGenerator.MIN_IMAGE_SIZE}x{PreviewGenerator.MIN_IMAGE_SIZE}px. "
+                "This may indicate a corrupt or invalid image file."
+            )
     
     @staticmethod
     def generate_hotpreview(
@@ -89,7 +109,11 @@ class PreviewGenerator:
         except Exception:
             pass  # No EXIF orientation or already correct
         
+        # Validate image size
+        PreviewGenerator._validate_image_size(img)
+        
         # Generate thumbnail (maintains aspect ratio)
+        # Note: thumbnail() never scales UP, so small images stay small
         img.thumbnail(size, Image.Resampling.LANCZOS)
         
         # Get actual dimensions after resize
@@ -134,7 +158,11 @@ class PreviewGenerator:
         # Copy image to avoid modifying original
         img_copy = img.copy()
         
+        # Validate image size
+        PreviewGenerator._validate_image_size(img_copy)
+        
         # Generate thumbnail (maintains aspect ratio)
+        # Note: thumbnail() never scales UP, so small images stay small
         img_copy.thumbnail(size, Image.Resampling.LANCZOS)
         
         # Get actual dimensions after resize
@@ -189,7 +217,11 @@ class PreviewGenerator:
         except Exception:
             pass  # No EXIF orientation or already correct
         
+        # Validate image size
+        PreviewGenerator._validate_image_size(img)
+        
         # Resize to max dimension while maintaining aspect ratio
+        # Note: thumbnail() never scales UP, so small images stay small
         img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
         
         # Get actual dimensions after resize
@@ -230,7 +262,11 @@ class PreviewGenerator:
         # Copy image to avoid modifying original
         img_copy = img.copy()
         
+        # Validate image size
+        PreviewGenerator._validate_image_size(img_copy)
+        
         # Resize to max dimension while maintaining aspect ratio
+        # Note: thumbnail() never scales UP, so small images stay small
         img_copy.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
         
         # Get actual dimensions after resize
