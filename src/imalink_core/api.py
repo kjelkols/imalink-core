@@ -29,13 +29,13 @@ def process_image(
     - Hothash (unique identifier)
     
     PhotoEgg optionally includes:
-    - Coldpreview (larger preview, e.g. 1920px)
+    - Coldpreview (larger preview, 150px to original size)
     
     Args:
         image_path: Path to physical image file
         coldpreview_size: Target size for coldpreview in pixels.
                          None (default) = skip coldpreview, only hotpreview.
-                         If specified, must be >= 150. Typical value: 1920.
+                         If specified, must be >= 150 (can be any size up to original).
         
     Returns:
         ImportResult with PhotoEgg data (coldpreview_base64 may be None)
@@ -47,10 +47,10 @@ def process_image(
         >>> # Minimal PhotoEgg (hotpreview only, default)
         >>> result = process_image(Path("photo.jpg"))
         >>> 
-        >>> # Full PhotoEgg with 1920px coldpreview
-        >>> result = process_image(Path("photo.jpg"), coldpreview_size=1920)
+        >>> # Full PhotoEgg with coldpreview
+        >>> result = process_image(Path("photo.jpg"), coldpreview_size=2560)
         >>> 
-        >>> # Custom coldpreview size
+        >>> # Smaller coldpreview
         >>> result = process_image(Path("photo.jpg"), coldpreview_size=1024)
     """
     # Validate coldpreview_size if provided
@@ -144,7 +144,7 @@ def batch_process(
         image_paths: List of paths to image files
         coldpreview_size: Target size for coldpreview in pixels.
                          None (default) = skip coldpreview, only hotpreview.
-                         If specified, must be >= 150. Typical value: 1920.
+                         If specified, must be >= 150 (can be any size up to original).
         progress_callback: Optional callback(current, total, result)
         
     Returns:
@@ -165,8 +165,8 @@ def batch_process(
         >>> # Minimal PhotoEggs (hotpreview only, default)
         >>> results = batch_process(images, progress_callback=on_progress)
         >>> 
-        >>> # Full PhotoEggs with 1920px coldpreview
-        >>> results = batch_process(images, coldpreview_size=1920, 
+        >>> # Full PhotoEggs with coldpreview
+        >>> results = batch_process(images, coldpreview_size=2560, 
         ...                         progress_callback=on_progress)
         >>> 
         >>> successful = [r for r in results if r.success]

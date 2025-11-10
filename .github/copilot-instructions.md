@@ -36,10 +36,10 @@ imalink-core serves as the **canonical processing layer** between:
 # Minimal PhotoEgg (hotpreview only, default - fastest)
 result = process_image(Path(user_selected_file))
 
-# Full PhotoEgg with 1920px coldpreview
-result = process_image(Path(user_selected_file), coldpreview_size=1920)
+# Full PhotoEgg with coldpreview
+result = process_image(Path(user_selected_file), coldpreview_size=2560)
 
-# Custom coldpreview size
+# Smaller coldpreview
 result = process_image(Path(user_selected_file), coldpreview_size=1024)
 
 if result.success:
@@ -58,7 +58,7 @@ Understanding the model separation is essential:
 
 1. **CorePhoto** (`src/imalink_core/models/photo.py`) - Complete extractable data
    - ALWAYS contains hotpreview (150x150) as base64
-   - OPTIONALLY contains coldpreview (e.g. 1920x1080) as base64
+   - OPTIONALLY contains coldpreview (any size from 150px to original) as base64
    - Used during image import/processing pipeline
    - NOT the canonical API model (common misconception - see `PHOTO_MODEL_DESIGN.md`)
    - Includes optional backend fields (`id`, `user_id`) but these are None during core processing
@@ -83,15 +83,15 @@ Understanding the model separation is essential:
 # Minimal PhotoEgg (default - hotpreview only)
 process_image(path)
 
-# Full PhotoEgg with 1920px coldpreview
-process_image(path, coldpreview_size=1920)
+# Full PhotoEgg with coldpreview
+process_image(path, coldpreview_size=2560)
 
-# Custom coldpreview size
+# Smaller coldpreview
 process_image(path, coldpreview_size=1024)
 
 # Batch processing
 batch_process(paths, coldpreview_size=None, progress_callback=...)  # Minimal
-batch_process(paths, coldpreview_size=1920, progress_callback=...)  # Full
+batch_process(paths, coldpreview_size=2560, progress_callback=...)  # Full
 
 Path → validate → extract EXIF → generate previews → calculate hothash → PhotoEgg
 ```
@@ -99,8 +99,7 @@ Path → validate → extract EXIF → generate previews → calculate hothash �
 **API Parameters**:
 - `coldpreview_size`: Optional[int] = None
   - None (default): Minimal PhotoEgg - skip coldpreview, only hotpreview (fastest)
-  - 1920: Full PhotoEgg - standard coldpreview size
-  - Custom: e.g., 1024 for smaller preview
+  - Any size >= 150: Full PhotoEgg with coldpreview (e.g., 1024, 2560, or up to original size)
   - Validation: If specified, must be >= 150 (hotpreview size)
 
 Key components (all in `src/imalink_core/`):
@@ -196,14 +195,11 @@ from imalink_core import process_image
 
 def import_from_user_disk(file_path: Path, backend_api):
     """Process file locally, send only metadata to backend"""
-    # Standard: 1920px coldpreview
-def import_from_user_disk(file_path: Path, backend_api):
-    """Process file locally, send only metadata to backend"""
     # Default: Minimal PhotoEgg (hotpreview only, fastest)
     result = process_image(file_path)
     
-    # Or with coldpreview:
-    # result = process_image(file_path, coldpreview_size=1920)
+    # Or with coldpreview (specify size as needed):
+    # result = process_image(file_path, coldpreview_size=2560)
     
     if result.success:
         # Send metadata to backend - file stays on user's disk
@@ -227,7 +223,7 @@ const response = await fetch('http://localhost:8765/v1/process', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ 
     file_path: 'dsc_1234.jpg',  // or full path: C:/Photos/dsc_1234.jpg
-    coldpreview_size: null  // null (default) or 1920 for coldpreview
+    coldpreview_size: null  // null (default) or specify size (e.g., 2560)
   })
 });
 
@@ -235,7 +231,7 @@ const photoEgg = await response.json();
 // {
 //   hothash: "abc123...",
 //   hotpreview: { base64: "...", width: 150, height: 150 },
-//   coldpreview: { base64: "...", width: 1920, height: 1080 },
+//   coldpreview: { base64: "...", width: 2560, height: 1920 },  // if requested
 //   metadata: { taken_at: "2024-07-15T14:30:00Z", camera: {...}, gps: {...} },
 //   file: { filename: "dsc_1234.jpg", size: 4567890, format: "jpeg" }
 // }
@@ -288,7 +284,7 @@ Same hothash can exist at multiple locations - backend tracks metadata, user tra
 
 ### Preview Sizes
 - **Hotpreview**: 150x150px, ~5-15KB, gallery thumbnails, stored in DB
-- **Coldpreview**: 1920x1080px, ~100-200KB, detail view, on-demand generation
+- **Coldpreview**: Variable size (150px to original), ~100-200KB typical, detail view, optional
 
 ## Key Files to Reference
 

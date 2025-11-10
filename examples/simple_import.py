@@ -21,8 +21,8 @@ def main():
     # Process the image (default: minimal PhotoEgg with hotpreview only)
     result = process_image(image_path)
     
-    # Or with full coldpreview:
-    # result = process_image(image_path, coldpreview_size=1920)
+    # Or with coldpreview (specify desired size):
+    # result = process_image(image_path, coldpreview_size=2560)
     
     if result.success:
         print("✓ Success!\n")

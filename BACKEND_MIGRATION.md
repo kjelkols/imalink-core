@@ -13,8 +13,8 @@ from imalink_core import process_image
 # Minimal PhotoEgg (hotpreview only, default - fastest)
 result = process_image(Path("photo.jpg"))
 
-# Full PhotoEgg with coldpreview
-result = process_image(Path("photo.jpg"), coldpreview_size=1920)
+# Full PhotoEgg with coldpreview (specify size)
+result = process_image(Path("photo.jpg"), coldpreview_size=2560)
 
 if result.success:
     photo_egg = result.photo.to_dict()  # CorePhoto → PhotoEgg JSON
@@ -35,10 +35,10 @@ if result.success:
     "hotpreview_width": 150,
     "hotpreview_height": 113,
     
-    # Coldpreview (1920x1080px, ~100-200KB) - OPTIONAL
+    # Coldpreview (variable size, ~100-200KB) - OPTIONAL
     "coldpreview_base64": "/9j/4AAQ..." | null,
-    "coldpreview_width": 1920 | null,
-    "coldpreview_height": 1080 | null,
+    "coldpreview_width": 2560 | null,  # Example size
+    "coldpreview_height": 1920 | null,  # Example size
     
     # File info
     "primary_filename": "IMG_1234.jpg",
@@ -329,8 +329,8 @@ complete_egg = {
     "hotpreview_width": 150,
     "hotpreview_height": 113,
     "coldpreview_base64": "...",
-    "coldpreview_width": 1920,
-    "coldpreview_height": 1440,
+    "coldpreview_width": 2560,
+    "coldpreview_height": 1920,
     "primary_filename": "IMG_1234.jpg",
     "width": 4032,
     "height": 3024,

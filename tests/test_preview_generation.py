@@ -3,7 +3,7 @@ Tests for preview generation and hothash calculation
 
 Tests:
 - Hotpreview (150x150) generation
-- Coldpreview (1920x1080) generation
+- Coldpreview (configurable size) generation
 - Hothash calculation (SHA256 of hotpreview)
 - EXIF rotation handling
 """
@@ -90,10 +90,10 @@ class TestHotpreviewGeneration:
 
 
 class TestColdpreviewGeneration:
-    """Test coldpreview (1920x1080) generation"""
+    """Test coldpreview generation with configurable size"""
     
     def test_generate_coldpreview_basic(self):
-        """Should generate coldpreview within 1920x1080"""
+        """Should generate coldpreview within specified size"""
         file_path = FIXTURES_DIR / "jpeg_landscape.jpg"  # 1200x800
         coldpreview = PreviewGenerator.generate_coldpreview(file_path)
         
@@ -101,7 +101,7 @@ class TestColdpreviewGeneration:
         assert coldpreview.width > 0
         assert coldpreview.height > 0
         
-        # Should fit within 1920x1080
+        # Should fit within max size (default is 1920x1080 in generator)
         assert coldpreview.width <= 1920
         assert coldpreview.height <= 1080
     
@@ -204,7 +204,7 @@ class TestBothPreviewGeneration:
         assert hotpreview.width <= 150
         assert hotpreview.height <= 150
         
-        # Coldpreview should be original size (800x600 < 1920x1080)
+        # Coldpreview should be original size (smaller than max)
         assert coldpreview.width == 800
         assert coldpreview.height == 600
     
@@ -214,7 +214,7 @@ class TestBothPreviewGeneration:
         hotpreview, coldpreview = PreviewGenerator.generate_both(file_path)
         
         assert hotpreview.width <= 150
-        assert coldpreview.width == 1200  # Original size (within 1920x1080)
+        assert coldpreview.width == 1200  # Original size (within max size)
 
 
 class TestPreviewQuality:
