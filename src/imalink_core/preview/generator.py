@@ -20,14 +20,15 @@ class HotPreview:
     150x150px thumbnail with hothash.
     
     Attributes:
-        bytes: Raw JPEG bytes (no EXIF metadata)
-        base64: Base64-encoded string for API transmission
+        bytes: Raw JPEG bytes (no EXIF metadata) - for internal processing
+        base64: Base64-encoded string - REQUIRED for JSON/API transmission
+                This is the ONLY format for image data in PhotoEgg JSON
         hothash: SHA256 hex digest of bytes (unique identifier)
         width: Actual width in pixels
         height: Actual height in pixels
     """
     bytes: bytes
-    base64: str
+    base64: str  # REQUIRED: Industry standard for binary data in JSON
     hothash: str
     width: int
     height: int
@@ -36,16 +37,17 @@ class HotPreview:
 @dataclass
 class ColdPreview:
     """
-    1920x1080px preview for viewing.
+    Variable size preview for viewing.
     
     Attributes:
-        bytes: Raw JPEG bytes (no EXIF metadata)
-        base64: Base64-encoded string for API transmission
+        bytes: Raw JPEG bytes (no EXIF metadata) - for internal processing
+        base64: Base64-encoded string - REQUIRED for JSON/API transmission
+                This is the ONLY format for image data in PhotoEgg JSON
         width: Actual width in pixels
         height: Actual height in pixels
     """
     bytes: bytes
-    base64: str
+    base64: str  # REQUIRED: Industry standard for binary data in JSON
     width: int
     height: int
 

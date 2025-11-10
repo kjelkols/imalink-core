@@ -68,17 +68,22 @@ class CorePhoto:
     - imalink-qt-frontend (display)
     
     Backend API returns this structure, frontend expects it.
+    
+    CRITICAL: All image data uses Base64 encoding - the industry standard
+    for binary data in JSON. No other format is supported.
     """
     # Identity (required)
     hothash: str  # SHA256 of hotpreview (unique ID)
     
     # Hotpreview (150x150 JPEG thumbnail for galleries)
-    hotpreview_base64: Optional[str] = None  # Base64-encoded JPEG
+    # Base64 is REQUIRED - only format for binary data in JSON
+    hotpreview_base64: Optional[str] = None  # Base64-encoded JPEG (REQUIRED format)
     hotpreview_width: Optional[int] = None   # Actual width after resize
     hotpreview_height: Optional[int] = None  # Actual height after resize
     
-    # Coldpreview (1920x1080 JPEG for detail view)
-    coldpreview_base64: Optional[str] = None  # Base64-encoded JPEG
+    # Coldpreview (variable size JPEG for detail view)
+    # Base64 is REQUIRED - only format for binary data in JSON
+    coldpreview_base64: Optional[str] = None  # Base64-encoded JPEG (REQUIRED format)
     coldpreview_width: Optional[int] = None   # Actual width after resize
     coldpreview_height: Optional[int] = None  # Actual height after resize
     

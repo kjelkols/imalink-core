@@ -25,18 +25,25 @@ if result.success:
 
 ## PhotoEgg Structure (CorePhoto.to_dict())
 
+**CRITICAL: All image data uses Base64 encoding**
+- Base64 is the industry standard for binary data in JSON
+- JSON cannot contain raw bytes - only text
+- `hotpreview_base64` and `coldpreview_base64` are strings, not bytes
+
 ```python
 {
     # Identity
     "hothash": "abc123...",  # SHA256 hash (unique ID)
     
     # Hotpreview (150x150px, ~5-15KB) - ALWAYS INCLUDED
-    "hotpreview_base64": "/9j/4AAQ...",
+    # Base64-encoded JPEG string (NOT raw bytes)
+    "hotpreview_base64": "/9j/4AAQ...",  # Base64 string
     "hotpreview_width": 150,
     "hotpreview_height": 113,
     
     # Coldpreview (variable size, ~100-200KB) - OPTIONAL
-    "coldpreview_base64": "/9j/4AAQ..." | null,
+    # Base64-encoded JPEG string (NOT raw bytes)
+    "coldpreview_base64": "/9j/4AAQ..." | null,  # Base64 string or null
     "coldpreview_width": 2560 | null,  # Example size
     "coldpreview_height": 1920 | null,  # Example size
     
@@ -216,18 +223,25 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 class PhotoEggSchema(BaseModel):
-    """Schema for PhotoEgg (imalink-core output)"""
+    """
+    Schema for PhotoEgg (imalink-core output)
+    
+    CRITICAL: Image fields use Base64 encoding
+    - hotpreview_base64: Base64-encoded JPEG string (NOT bytes)
+    - coldpreview_base64: Base64-encoded JPEG string or null (NOT bytes)
+    - This is the industry standard for binary data in JSON
+    """
     
     # Identity (required)
     hothash: str = Field(..., min_length=64, max_length=64)
     
-    # Hotpreview (required)
-    hotpreview_base64: str
+    # Hotpreview (required) - Base64 string
+    hotpreview_base64: str  # Base64-encoded JPEG
     hotpreview_width: int = Field(..., gt=0)
     hotpreview_height: int = Field(..., gt=0)
     
-    # Coldpreview (optional)
-    coldpreview_base64: Optional[str] = None
+    # Coldpreview (optional) - Base64 string or null
+    coldpreview_base64: Optional[str] = None  # Base64-encoded JPEG or null
     coldpreview_width: Optional[int] = None
     coldpreview_height: Optional[int] = None
     

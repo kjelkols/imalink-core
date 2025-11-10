@@ -10,10 +10,11 @@
 ImaLink Core is a platform-independent Python library that provides all image processing functionality for the ImaLink ecosystem:
 
 - **EXIF metadata extraction** - Reliable extraction of camera settings, GPS, timestamps
-- **Preview generation** - Generate hotpreview (150x150) and coldpreview (1920x1080) thumbnails
+- **Preview generation** - Generate hotpreview (150x150) and coldpreview (variable size) thumbnails
 - **Hothash calculation** - SHA256-based perceptual duplicate detection
 - **Image validation** - Format detection and file validation
 - **RAW format support** - Optional support for NEF, CR2, ARW, DNG files
+- **Base64 encoding** - All image data uses Base64 for JSON compatibility (industry standard)
 
 ## 🚀 Installation
 
@@ -48,11 +49,12 @@ if result.success:
     print(f"Camera: {result.metadata.camera_make} {result.metadata.camera_model}")
     print(f"GPS: {result.metadata.gps_latitude}, {result.metadata.gps_longitude}")
     
-    # Both previews are embedded in CorePhoto object
+    # Both previews are embedded in CorePhoto object as Base64 strings
+    # Base64 is the industry standard for binary data in JSON
     if photo.hotpreview_base64:
-        print(f"Hotpreview ready (gallery): {len(photo.hotpreview_base64)} bytes")
+        print(f"Hotpreview ready (gallery): {len(photo.hotpreview_base64)} chars")
     if photo.coldpreview_base64:
-        print(f"Coldpreview ready (detail view): {len(photo.coldpreview_base64)} bytes")
+        print(f"Coldpreview ready (detail view): {len(photo.coldpreview_base64)} chars")
 else:
     print(f"Error: {result.error}")
 ```

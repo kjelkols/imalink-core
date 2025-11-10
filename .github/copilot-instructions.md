@@ -16,6 +16,33 @@ CorePhoto contains ALL extractable data from images during processing. Consumers
 
 **Core is stateless**: Performs purely algorithmic operations (EXIF extraction, preview generation, hashing). No state management, no storage decisions. Consumers decide what to persist and where.
 
+## CRITICAL: Base64 Encoding for Image Data
+
+**ALL image data in PhotoEgg uses Base64 encoding - NO EXCEPTIONS**
+
+### Why Base64?
+- JSON can only contain text (strings, numbers, booleans, null, objects, arrays)
+- JSON **CANNOT** contain binary data (raw bytes)
+- Image files are binary data (JPEG/PNG bytes)
+- Base64 converts binary → text, allowing images in JSON
+
+### Fields Using Base64
+- `hotpreview_base64`: Base64-encoded JPEG string (NOT bytes)
+- `coldpreview_base64`: Base64-encoded JPEG string or null (NOT bytes)
+- These are **strings**, not binary data
+
+### Example
+```python
+# WRONG - cannot put bytes in JSON:
+{"hotpreview": b'\xff\xd8\xff\xe0...'}  # ❌ Invalid JSON
+
+# CORRECT - Base64 string in JSON:
+{"hotpreview_base64": "/9j/4AAQSkZJRg..."}  # ✅ Valid JSON
+```
+
+### Industry Standard
+Base64 is the universal standard for embedding binary data in JSON/APIs. No other format is supported in imalink-core.
+
 ## Architecture & Data Flow
 
 ### Role as Interface Layer
