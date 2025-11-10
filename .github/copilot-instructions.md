@@ -172,6 +172,9 @@ Key components (all in `src/imalink_core/`):
 - `preview/generator.py` - EXIF-aware thumbnails with Image object support:
   - `generate_hotpreview_from_image(img)` - Generate from PIL Image
   - `generate_coldpreview_from_image(img)` - Generate from PIL Image
+  - **MIN_IMAGE_SIZE = 4**: Images smaller than 4x4 pixels rejected as corrupt
+  - `_validate_image_size(img)` - Validates minimum image dimensions
+  - PIL's `thumbnail()` never scales up - small images stay small
   - Legacy file-based methods still exist for backward compatibility
 - `models/` - Data structures (CorePhoto, ImportResult, CoreImageFile)
 
@@ -203,12 +206,13 @@ Key components (all in `src/imalink_core/`):
   ```
 
 ### Testing Philosophy
-- Tests in `tests/` use pytest  
+- Tests in `tests/` use pytest
+- **66 tests total**: 51 unit tests + 15 integration tests
+- Integration tests use FastAPI TestClient for end-to-end API testing
 - Graceful degradation for missing files (returns None/empty, not crashes)
 - Example: `ExifExtractor.extract_basic(Path("nonexistent.jpg"))` returns empty metadata
-- Test fixtures in `tests/fixtures/images/` - 7 synthetic images (~55KB total)
-- Run `uv run python tests/generate_test_fixtures.py` to regenerate test images
-- Note: Generated test images have limited EXIF support - use real photos for comprehensive testing
+- Test fixtures in `tests/fixtures/images/` - real camera images for EXIF testing
+- Image size validation: MIN_IMAGE_SIZE = 4 pixels (smaller images rejected as corrupt)
 
 ### EXIF Reliability Tiers
 Critical for understanding metadata handling (documented in `exif_extractor.py`):
@@ -220,10 +224,22 @@ Critical for understanding metadata handling (documented in `exif_extractor.py`)
 
 ### Running Tests
 ```bash
-pytest                                    # All tests
+pytest                                    # All tests (66 total: 51 unit + 15 integration)
+pytest tests/test_service_api.py          # Integration tests (FastAPI endpoint)
+pytest tests/test_preview_generation.py   # Preview generation tests
 pytest --cov=imalink_core --cov-report=html  # With coverage
-pytest tests/test_basic.py                # Specific file
 ```
+
+**Test Structure:**
+- `tests/test_service_api.py` - **Integration tests** for FastAPI `/v1/process` endpoint
+  - File upload via multipart/form-data
+  - PhotoEgg JSON response validation
+  - Error handling (invalid files, tiny images, bad parameters)
+  - Base64 encoding validation
+- `tests/test_preview_generation.py` - Preview generation + hothash
+- `tests/test_exif_extraction.py` - EXIF metadata extraction
+- `tests/test_image_validation.py` - Image validation (legacy)
+- `tests/test_basic.py` - Smoke tests
 
 ### Code Quality
 ```bash
@@ -391,6 +407,8 @@ class ImportResult:
 5. **Camera settings are best-effort** - 30% of consumer photos lack ISO/aperture/etc
 6. **Hothash is from preview, not original** - Same original can have different hothash if preview generation changes
 7. **EXIF orientation must be applied** - Image bytes may be rotated, use `exif_transpose()`
+8. **Small images stay small** - PIL's `thumbnail()` never scales up. A 59x59px image stays 59x59px (not 150x150)
+9. **Tiny images rejected** - Images < 4x4 pixels are rejected as likely corrupt (MIN_IMAGE_SIZE = 4)
 
 ## Documentation Style
 - Docstrings: Google style with Args/Returns sections
