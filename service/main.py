@@ -36,7 +36,12 @@ app.add_middleware(
 
 # Response Model
 class PhotoEggResponse(BaseModel):
-    """PhotoEgg - complete image data in JSON format"""
+    """
+    PhotoEgg response model - complete image data in JSON format.
+    
+    PhotoEgg is the canonical output format from imalink-core API.
+    This Pydantic model validates and serializes the PhotoEgg JSON structure.
+    """
     # Identity
     hothash: str
     
@@ -56,15 +61,15 @@ class PhotoEggResponse(BaseModel):
     height: int
     
     # Timestamps
-    taken_at: Optional[str] = None
+    taken_at: Optional[str] = None  # ISO 8601 format (e.g., "2024-07-15T14:30:00")
     
     # Camera metadata
     camera_make: Optional[str] = None
     camera_model: Optional[str] = None
     
     # GPS
-    gps_latitude: Optional[float] = None
-    gps_longitude: Optional[float] = None
+    gps_latitude: Optional[float] = None  # Decimal degrees (e.g., 59.9139)
+    gps_longitude: Optional[float] = None  # Decimal degrees (e.g., 10.7522)
     has_gps: bool
     
     # Camera settings
@@ -101,24 +106,27 @@ async def process_image_endpoint(
     """
     Process uploaded image file and return PhotoEgg JSON.
     
+    PhotoEgg is the canonical output format: a JSON object containing all extractable
+    image data (metadata, previews, hothash) with Base64-encoded JPEG previews.
+    
     Upload image via multipart/form-data (standard file upload).
     
-    Core's single responsibility: (image file, coldpreview_size) → PhotoEgg
+    Core's single responsibility: (image file, coldpreview_size) → PhotoEgg JSON
     
     PhotoEgg always includes:
-    - Hotpreview (150x150px thumbnail) as Base64
-    - Complete EXIF metadata
-    - Hothash (unique identifier)
+    - Hotpreview (150x150px thumbnail) as Base64-encoded JPEG
+    - Complete EXIF metadata (timestamps, GPS, camera info)
+    - Hothash (SHA256 of hotpreview - unique identifier)
     
     PhotoEgg optionally includes:
-    - Coldpreview (larger preview) as Base64
+    - Coldpreview (larger preview) as Base64-encoded JPEG
     
     Args:
         file: Uploaded image file (multipart/form-data)
         coldpreview_size: Optional size for coldpreview (form field)
         
     Returns:
-        PhotoEggResponse: Complete image data in JSON format
+        PhotoEggResponse: PhotoEgg JSON validated by Pydantic model
         
     Raises:
         HTTPException 400: If file processing fails

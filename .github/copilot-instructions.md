@@ -16,7 +16,8 @@ Essential patterns & files
 - Hothash: SHA256 of the hotpreview JPEG bytes (hotpreview is 150px square). Hothash generation is in preview generator — treat it as the primary identifier.
 
 Architecture essentials
-- Three layers: CorePhoto (processing) → PhotoEgg (API response) → Backend Photo (persistence). CorePhoto is NOT the API model.
+- Three layers: CorePhoto (processing) → PhotoEgg (API response JSON) → Backend Photo (persistence). CorePhoto is NOT the API model.
+- PhotoEgg definition: JSON object returned from `/v1/process`. PhotoEggResponse is the Pydantic validation model.
 - Decoupling principle: user keeps files anywhere on disk, backend only stores metadata + hothash identifier.
 - EXIF reliability: BasicMetadata 98%+ (dimensions, GPS, camera), CameraSettings 70-90% (ISO, aperture) — always check Optional fields.
 - Dataclass pattern: all models have `to_dict()` / `from_dict()` for JSON serialization with datetime → ISO string conversion.
@@ -34,7 +35,7 @@ Project-specific conventions
 - Error handling: public APIs return (success, data/error) patterns; avoid raising exceptions as API surface behavior.
 
 Data shapes & examples
-- PhotoEgg highlights: `hothash`, `hotpreview_base64`, `hotpreview_width`, `hotpreview_height`, `coldpreview_base64|null`, `primary_filename`, `width`, `height`, `taken_at`, `camera_make`, `gps_latitude`, `has_gps`.
+- PhotoEgg: JSON object with `hothash`, `hotpreview_base64`, `hotpreview_width`, `hotpreview_height`, `coldpreview_base64|null`, `primary_filename`, `width`, `height`, `taken_at` (ISO 8601), `camera_make`, `gps_latitude` (decimal degrees), `has_gps`.
 - Upload example (curl):
   `curl -X POST http://localhost:8765/v1/process -F "file=@/path/IMG.jpg" -F "coldpreview_size=2560"`
 
