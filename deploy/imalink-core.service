@@ -12,6 +12,12 @@ ExecStart=/root/.local/bin/uv run uvicorn service.main:app --host 127.0.0.1 --po
 Restart=always
 RestartSec=10
 
+# VIKTIG: Oppdater følgende før du kjører systemctl:
+# 1. User=dinbruker (erstatt www-data)
+# 2. Group=dinbruker (erstatt www-data)
+# 3. WorkingDirectory=/home/dinbruker/imalink-core (din faktiske sti)
+# 4. Environment="PATH=..." (oppdater hvis uv er installert et annet sted)
+
 # Security
 NoNewPrivileges=true
 PrivateTmp=true

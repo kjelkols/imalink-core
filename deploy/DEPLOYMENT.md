@@ -14,15 +14,22 @@ Deployment til **core.trollfjell.com** på DigitalOcean server.
 ### 1. Koble til serveren
 
 ```bash
-ssh root@<server-ip>
+ssh <bruker>@<server-ip>
+# eller: ssh root@<server-ip>
 ```
 
 ### 2. Klon repository
 
 ```bash
-cd /opt
+# Klon til din hjemmekatalog (anbefalt for personlig server)
+cd ~
 git clone https://github.com/kjelkols/imalink-core.git
 cd imalink-core
+
+# Alternativt til /opt (krever root):
+# cd /opt
+# sudo git clone https://github.com/kjelkols/imalink-core.git
+# cd imalink-core
 ```
 
 ### 3. Installer avhengigheter
@@ -55,9 +62,14 @@ curl http://127.0.0.1:8765/
 # Kopier service-fil
 sudo cp deploy/imalink-core.service /etc/systemd/system/
 
-# Oppdater User i service-filen hvis nødvendig
-# Standard er www-data, men du kan bruke samme bruker som backend
+# VIKTIG: Oppdater User, Group og WorkingDirectory i service-filen
+# Erstatt www-data med din bruker og /opt/imalink-core med din sti
 sudo nano /etc/systemd/system/imalink-core.service
+
+# Eksempel endringer:
+# User=dinbruker
+# Group=dinbruker  
+# WorkingDirectory=/home/dinbruker/imalink-core
 
 # Reload systemd og start service
 sudo systemctl daemon-reload
@@ -128,7 +140,7 @@ sudo systemctl restart imalink-core
 ### Oppdater kode
 
 ```bash
-cd /opt/imalink-core
+cd ~/imalink-core  # eller din installasjonsti
 git pull
 uv sync  # Hvis nye dependencies
 sudo systemctl restart imalink-core
@@ -151,8 +163,11 @@ sudo journalctl -u imalink-core -n 50
 # Sjekk at uv er tilgjengelig
 which uv
 
+# Sjekk at stien i service-filen er riktig
+sudo nano /etc/systemd/system/imalink-core.service
+
 # Test manuelt
-cd /opt/imalink-core
+cd ~/imalink-core  # eller din installasjonsti
 uv run uvicorn service.main:app --host 127.0.0.1 --port 8765
 ```
 

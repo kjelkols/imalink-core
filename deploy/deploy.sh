@@ -6,17 +6,15 @@ set -e  # Exit on error
 
 echo "🚀 Deploying ImaLink Core to core.trollfjell.com..."
 
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then 
-    echo "⚠️  Please run as root (sudo bash deploy.sh)"
-    exit 1
-fi
-
 # Variables
 REPO_URL="https://github.com/kjelkols/imalink-core.git"
-INSTALL_DIR="/opt/imalink-core"
+INSTALL_DIR="$HOME/imalink-core"  # Installer i brukerens hjemmekatalog
 SERVICE_NAME="imalink-core"
 DOMAIN="core.trollfjell.com"
+CURRENT_USER=$(whoami)
+
+echo "📍 Installing to: $INSTALL_DIR"
+echo "👤 Running as: $CURRENT_USER"
 
 # Step 1: Clone or update repository
 echo "📦 Cloning/updating repository..."
@@ -43,27 +41,36 @@ uv sync
 
 # Step 4: Install systemd service
 echo "⚙️  Installing systemd service..."
-cp deploy/imalink-core.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable "$SERVICE_NAME"
+
+# Create temporary service file with correct paths
+sed -e "s|User=www-data|User=$CURRENT_USER|g" \
+    -e "s|Group=www-data|Group=$CURRENT_USER|g" \
+    -e "s|WorkingDirectory=/opt/imalink-core|WorkingDirectory=$INSTALL_DIR|g" \
+    deploy/imalink-core.service > /tmp/imalink-core.service
+
+sudo cp /tmp/imalink-core.service /etc/systemd/system/
+rm /tmp/imalink-core.service
+
+sudo systemctl daemon-reload
+sudo systemctl enable "$SERVICE_NAME"
 
 # Step 5: Install Nginx config
 echo "🌐 Installing Nginx configuration..."
-cp deploy/nginx-core.trollfjell.com.conf /etc/nginx/sites-available/"$DOMAIN"
-ln -sf /etc/nginx/sites-available/"$DOMAIN" /etc/nginx/sites-enabled/
+sudo cp deploy/nginx-core.trollfjell.com.conf /etc/nginx/sites-available/"$DOMAIN"
+sudo ln -sf /etc/nginx/sites-available/"$DOMAIN" /etc/nginx/sites-enabled/
 
 # Test Nginx config
 echo "✅ Testing Nginx configuration..."
-nginx -t
+sudo nginx -t
 
 # Step 6: Start/restart services
 echo "🔄 Starting services..."
-systemctl restart "$SERVICE_NAME"
-systemctl reload nginx
+sudo systemctl restart "$SERVICE_NAME"
+sudo systemctl reload nginx
 
 # Step 7: Check status
 echo "📊 Service status:"
-systemctl status "$SERVICE_NAME" --no-pager
+sudo systemctl status "$SERVICE_NAME" --no-pager
 
 echo ""
 echo "✅ Deployment complete!"
