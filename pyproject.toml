@@ -30,6 +30,7 @@ dependencies = [
     "fastapi>=0.121.0",
     "uvicorn[standard]>=0.38.0",
     "python-multipart>=0.0.20",
+    "imalink-schemas @ git+https://github.com/kjelkols/imalink-schemas.git@v2.1.0",
 ]
 
 [project.optional-dependencies]
@@ -64,6 +65,9 @@ Homepage = "https://github.com/kjelkols/imalink-core"
 Documentation = "https://github.com/kjelkols/imalink-core/blob/main/README.md"
 Repository = "https://github.com/kjelkols/imalink-core"
 Issues = "https://github.com/kjelkols/imalink-core/issues"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/imalink_core"]

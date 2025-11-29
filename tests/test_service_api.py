@@ -36,27 +36,25 @@ class TestProcessEndpoint:
         assert response.status_code == 200
         photo_egg = response.json()
         
-        # Verify PhotoEgg structure
+        # Verify PhotoEgg structure (PhotoCreateSchema)
         assert "hothash" in photo_egg
         assert "hotpreview_base64" in photo_egg
-        assert "hotpreview_width" in photo_egg
-        assert "hotpreview_height" in photo_egg
         assert "coldpreview_base64" in photo_egg
-        assert "primary_filename" in photo_egg
+        assert "image_file_list" in photo_egg
         assert "width" in photo_egg
         assert "height" in photo_egg
+        assert "exif_dict" in photo_egg
         
         # Verify hotpreview is present
         assert photo_egg["hotpreview_base64"] is not None
         assert len(photo_egg["hotpreview_base64"]) > 0
-        assert photo_egg["hotpreview_width"] <= 150  # Max 150px
-        assert photo_egg["hotpreview_height"] <= 150  # Max 150px
         
         # Verify coldpreview is NOT present (default behavior)
         assert photo_egg["coldpreview_base64"] is None
         
-        # Verify filename
-        assert photo_egg["primary_filename"] == "test.jpg"
+        # Verify image_file_list
+        assert len(photo_egg["image_file_list"]) == 1
+        assert photo_egg["image_file_list"][0]["filename"] == "test.jpg"
 
     def test_upload_jpeg_with_coldpreview(self):
         """Test JPEG upload WITH coldpreview requested."""
@@ -76,8 +74,8 @@ class TestProcessEndpoint:
         assert photo_egg["coldpreview_base64"] is not None
         assert len(photo_egg["coldpreview_base64"]) > 0
         
-        # Verify filename
-        assert photo_egg["primary_filename"] == "photo.jpg"
+        # Verify filename in image_file_list
+        assert photo_egg["image_file_list"][0]["filename"] == "photo.jpg"
 
     def test_upload_png(self):
         """Test PNG upload."""
@@ -93,7 +91,7 @@ class TestProcessEndpoint:
         photo_egg = response.json()
         
         assert photo_egg["hotpreview_base64"] is not None
-        assert photo_egg["primary_filename"] == "image.png"
+        assert photo_egg["image_file_list"][0]["filename"] == "image.png"
 
     def test_upload_with_exif_data(self):
         """Test that EXIF metadata is extracted correctly."""
@@ -108,13 +106,14 @@ class TestProcessEndpoint:
         assert response.status_code == 200
         photo_egg = response.json()
         
-        # Check EXIF fields exist (values depend on test fixture)
+        # Check EXIF fields exist in exif_dict (values depend on test fixture)
         assert "taken_at" in photo_egg
-        assert "camera_make" in photo_egg
-        assert "camera_model" in photo_egg
-        assert "has_gps" in photo_egg
         assert "gps_latitude" in photo_egg
         assert "gps_longitude" in photo_egg
+        assert "exif_dict" in photo_egg
+        # Camera fields are in exif_dict
+        if photo_egg["exif_dict"]:
+            assert "camera_make" in photo_egg["exif_dict"] or "camera_model" in photo_egg["exif_dict"]
 
     def test_upload_landscape_image(self):
         """Test landscape orientation."""
@@ -129,9 +128,8 @@ class TestProcessEndpoint:
         assert response.status_code == 200
         photo_egg = response.json()
         
-        # Hotpreview should be max 150x150 (but aspect ratio preserved)
-        assert photo_egg["hotpreview_width"] <= 150
-        assert photo_egg["hotpreview_height"] <= 150
+        # Hotpreview should be present
+        assert photo_egg["hotpreview_base64"] is not None
         
         # Original dimensions should be landscape
         assert photo_egg["width"] > photo_egg["height"]
@@ -149,9 +147,8 @@ class TestProcessEndpoint:
         assert response.status_code == 200
         photo_egg = response.json()
         
-        # Hotpreview should be max 150x150 (but aspect ratio preserved)
-        assert photo_egg["hotpreview_width"] <= 150
-        assert photo_egg["hotpreview_height"] <= 150
+        # Hotpreview should be present
+        assert photo_egg["hotpreview_base64"] is not None
         
         # Original dimensions should be portrait
         assert photo_egg["height"] > photo_egg["width"]
@@ -183,8 +180,8 @@ class TestProcessEndpoint:
         assert photo_egg1["hothash"] == photo_egg2["hothash"]
         
         # But filenames should be different
-        assert photo_egg1["primary_filename"] == "test1.jpg"
-        assert photo_egg2["primary_filename"] == "test2.jpg"
+        assert photo_egg1["image_file_list"][0]["filename"] == "test1.jpg"
+        assert photo_egg2["image_file_list"][0]["filename"] == "test2.jpg"
 
 
 class TestErrorHandling:

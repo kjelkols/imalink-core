@@ -6,14 +6,14 @@ Exposes image processing as HTTP API for language-agnostic access.
 
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from imalink_schemas import PhotoCreateSchema, ImageFileCreateSchema
 from imalink_core.metadata.exif_extractor import ExifExtractor
-from imalink_core.models.photo import CorePhoto
 from imalink_core.preview.generator import PreviewGenerator
 from PIL import Image, ImageOps
 
@@ -34,53 +34,6 @@ app.add_middleware(
 )
 
 
-# Response Model
-class PhotoEggResponse(BaseModel):
-    """
-    PhotoEgg response model - complete image data in JSON format.
-    
-    PhotoEgg is the canonical output format from imalink-core API.
-    This Pydantic model validates and serializes the PhotoEgg JSON structure.
-    """
-    # Identity
-    hothash: str
-    
-    # Hotpreview (always included) - Base64-encoded JPEG
-    hotpreview_base64: str
-    hotpreview_width: int
-    hotpreview_height: int
-    
-    # Coldpreview (optional) - Base64-encoded JPEG
-    coldpreview_base64: Optional[str] = None
-    coldpreview_width: Optional[int] = None
-    coldpreview_height: Optional[int] = None
-    
-    # File info
-    primary_filename: str
-    width: int
-    height: int
-    
-    # Timestamps
-    taken_at: Optional[str] = None  # ISO 8601 format (e.g., "2024-07-15T14:30:00")
-    
-    # Camera metadata
-    camera_make: Optional[str] = None
-    camera_model: Optional[str] = None
-    
-    # GPS
-    gps_latitude: Optional[float] = None  # Decimal degrees (e.g., 59.9139)
-    gps_longitude: Optional[float] = None  # Decimal degrees (e.g., 10.7522)
-    has_gps: bool
-    
-    # Camera settings
-    iso: Optional[int] = None
-    aperture: Optional[float] = None
-    shutter_speed: Optional[str] = None
-    focal_length: Optional[float] = None
-    lens_model: Optional[str] = None
-    lens_make: Optional[str] = None
-
-
 class ErrorResponse(BaseModel):
     """Error response"""
     error: str
@@ -98,7 +51,7 @@ def root():
     }
 
 
-@app.post("/v1/process", response_model=PhotoEggResponse, responses={400: {"model": ErrorResponse}})
+@app.post("/v1/process", response_model=PhotoCreateSchema, responses={400: {"model": ErrorResponse}})
 async def process_image_endpoint(
     file: UploadFile = File(..., description="Image file to process"),
     coldpreview_size: Optional[int] = Form(None, description="Size for coldpreview (e.g., 2560). None = skip coldpreview. Must be >= 150.")
@@ -126,7 +79,7 @@ async def process_image_endpoint(
         coldpreview_size: Optional size for coldpreview (form field)
         
     Returns:
-        PhotoEggResponse: PhotoEgg JSON validated by Pydantic model
+        PhotoCreateSchema: PhotoEgg JSON validated by Pydantic model
         
     Raises:
         HTTPException 400: If file processing fails
@@ -200,8 +153,37 @@ async def process_image_endpoint(
             coldpreview_width = None
             coldpreview_height = None
         
-        # Build CorePhoto object
-        photo = CorePhoto(
+        # Build exif_dict with all EXIF metadata
+        exif_dict: Dict[str, Any] = {}
+        
+        # Add all available EXIF fields
+        if metadata.camera_make:
+            exif_dict["camera_make"] = metadata.camera_make
+        if metadata.camera_model:
+            exif_dict["camera_model"] = metadata.camera_model
+        if camera_settings.iso:
+            exif_dict["iso"] = camera_settings.iso
+        if camera_settings.aperture:
+            exif_dict["aperture"] = camera_settings.aperture
+        if camera_settings.shutter_speed:
+            exif_dict["shutter_speed"] = camera_settings.shutter_speed
+        if camera_settings.focal_length:
+            exif_dict["focal_length"] = camera_settings.focal_length
+        if camera_settings.lens_model:
+            exif_dict["lens_model"] = camera_settings.lens_model
+        if camera_settings.lens_make:
+            exif_dict["lens_make"] = camera_settings.lens_make
+        
+        # Build image_file_list
+        image_file = ImageFileCreateSchema(
+            filename=file.filename or "unknown.jpg",
+            file_size=len(image_bytes),
+            format=file.content_type or "image/jpeg",
+            is_raw=False  # TODO: Detect RAW format
+        )
+        
+        # Build PhotoCreateSchema
+        photo = PhotoCreateSchema(
             hothash=hotpreview.hothash,
             hotpreview_base64=hotpreview.base64,
             hotpreview_width=hotpreview.width,
@@ -209,27 +191,16 @@ async def process_image_endpoint(
             coldpreview_base64=coldpreview_base64,
             coldpreview_width=coldpreview_width,
             coldpreview_height=coldpreview_height,
-            primary_filename=file.filename,
-            taken_at=metadata.taken_at,
+            image_file_list=[image_file],
+            taken_at=metadata.taken_at.isoformat() if metadata.taken_at else None,
             width=metadata.width,
             height=metadata.height,
-            camera_make=metadata.camera_make,
-            camera_model=metadata.camera_model,
             gps_latitude=metadata.gps_latitude,
             gps_longitude=metadata.gps_longitude,
-            has_gps=metadata.gps_latitude is not None,
-            iso=camera_settings.iso,
-            aperture=camera_settings.aperture,
-            shutter_speed=camera_settings.shutter_speed,
-            focal_length=camera_settings.focal_length,
-            lens_model=camera_settings.lens_model,
-            lens_make=camera_settings.lens_make,
+            exif_dict=exif_dict if exif_dict else None
         )
         
-        # Convert CorePhoto to PhotoEgg JSON
-        photo_dict = photo.to_dict()
-        
-        return PhotoEggResponse(**photo_dict)
+        return photo
     
     except Exception as e:
         raise HTTPException(
