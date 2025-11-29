@@ -157,11 +157,9 @@ class ExifExtractor:
                     result.camera_model = str(exif[272]).strip()
                 
                 # Extract GPS coordinates (98%+ reliable if present)
-                if 34853 in exif:  # GPSInfo
-                    gps_data = exif.get_ifd(34853)
-                    lat, lon = ExifExtractor._extract_gps(gps_data)
-                    result.gps_latitude = lat
-                    result.gps_longitude = lon
+                lat, lon = ExifExtractor._extract_gps_from_exif(exif)
+                result.gps_latitude = lat
+                result.gps_longitude = lon
                 
         except Exception as e:
             # Silent failure - return partial data

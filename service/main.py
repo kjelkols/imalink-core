@@ -182,7 +182,12 @@ async def process_image_endpoint(
             is_raw=False  # TODO: Detect RAW format
         )
         
+        # Add has_gps to exif_dict (convenience field)
+        has_gps = metadata.gps_latitude is not None and metadata.gps_longitude is not None
+        exif_dict["has_gps"] = has_gps
+        
         # Build PhotoCreateSchema
+        # Note: metadata.taken_at is already ISO string from _standardize_datetime
         photo = PhotoCreateSchema(
             hothash=hotpreview.hothash,
             hotpreview_base64=hotpreview.base64,
@@ -192,7 +197,7 @@ async def process_image_endpoint(
             coldpreview_width=coldpreview_width,
             coldpreview_height=coldpreview_height,
             image_file_list=[image_file],
-            taken_at=metadata.taken_at.isoformat() if metadata.taken_at else None,
+            taken_at=metadata.taken_at,  # Already ISO string
             width=metadata.width,
             height=metadata.height,
             gps_latitude=metadata.gps_latitude,
