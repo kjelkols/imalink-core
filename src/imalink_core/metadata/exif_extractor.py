@@ -27,6 +27,10 @@ class BasicMetadata:
         camera_model: Camera model
         gps_latitude: GPS latitude in decimal degrees
         gps_longitude: GPS longitude in decimal degrees
+        gps_altitude: GPS altitude in meters
+        gps_timestamp: GPS time when photo was taken (ISO 8601)
+        gps_datestamp: GPS date when photo was taken (YYYY:MM:DD)
+        gps_map_datum: Geodetic survey data used (e.g., WGS-84)
     """
     taken_at: Optional[str] = None
     width: Optional[int] = None
@@ -35,6 +39,10 @@ class BasicMetadata:
     camera_model: Optional[str] = None
     gps_latitude: Optional[float] = None
     gps_longitude: Optional[float] = None
+    gps_altitude: Optional[float] = None
+    gps_timestamp: Optional[str] = None
+    gps_datestamp: Optional[str] = None
+    gps_map_datum: Optional[str] = None
 
 
 @dataclass
@@ -108,10 +116,14 @@ class ExifExtractor:
                 if 272 in exif:  # Model
                     result.camera_model = exif[272].strip() if exif[272] else None
                 
-                # Extract GPS coordinates
-                lat, lon = ExifExtractor._extract_gps_from_exif(exif)
+                # Extract GPS data
+                lat, lon, alt, ts, ds, datum = ExifExtractor._extract_gps_from_exif(exif)
                 result.gps_latitude = lat
                 result.gps_longitude = lon
+                result.gps_altitude = alt
+                result.gps_timestamp = ts
+                result.gps_datestamp = ds
+                result.gps_map_datum = datum
                 
         except Exception as e:
             # Silent failure - return partial data
@@ -156,10 +168,14 @@ class ExifExtractor:
                 if 272 in exif:  # Model
                     result.camera_model = str(exif[272]).strip()
                 
-                # Extract GPS coordinates (98%+ reliable if present)
-                lat, lon = ExifExtractor._extract_gps_from_exif(exif)
+                # Extract GPS data (98%+ reliable if present)
+                lat, lon, alt, ts, ds, datum = ExifExtractor._extract_gps_from_exif(exif)
                 result.gps_latitude = lat
                 result.gps_longitude = lon
+                result.gps_altitude = alt
+                result.gps_timestamp = ts
+                result.gps_datestamp = ds
+                result.gps_map_datum = datum
                 
         except Exception as e:
             # Silent failure - return partial data
@@ -341,22 +357,22 @@ class ExifExtractor:
         return result
     
     @staticmethod
-    def _extract_gps_from_exif(exif) -> Tuple[Optional[float], Optional[float]]:
+    def _extract_gps_from_exif(exif) -> Tuple[Optional[float], Optional[float], Optional[float], Optional[str], Optional[str], Optional[str]]:
         """
-        Extract GPS coordinates from EXIF data.
+        Extract GPS data from EXIF.
         
-        Handles multiple formats (DMS, decimal, etc.)
-        Validates coordinates and filters out "Null Island" (0, 0).
+        Returns:
+            Tuple of (latitude, longitude, altitude, timestamp, datestamp, map_datum)
         """
         try:
             # Get GPS IFD
             try:
                 gps_ifd = exif.get_ifd(0x8825)  # GPSInfo
             except (KeyError, AttributeError):
-                return None, None
+                return None, None, None, None, None, None
             
             if not gps_ifd:
-                return None, None
+                return None, None, None, None, None, None
             
             # Extract GPS coordinates
             gps_latitude = gps_ifd.get(2)  # GPSLatitude
@@ -364,28 +380,58 @@ class ExifExtractor:
             gps_longitude = gps_ifd.get(4)  # GPSLongitude
             gps_longitude_ref = gps_ifd.get(3)  # GPSLongitudeRef
             
-            if not (gps_latitude and gps_longitude):
-                return None, None
+            lat = None
+            lon = None
+            if gps_latitude and gps_longitude:
+                # Convert to decimal degrees
+                lat = ExifExtractor._convert_to_decimal(gps_latitude, gps_latitude_ref)
+                lon = ExifExtractor._convert_to_decimal(gps_longitude, gps_longitude_ref)
+                
+                # Validate coordinates
+                if lat is not None and lon is not None:
+                    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                        lat, lon = None, None
+                    # Filter "Null Island" (0, 0)
+                    elif lat == 0 and lon == 0:
+                        lat, lon = None, None
             
-            # Convert to decimal degrees
-            lat = ExifExtractor._convert_to_decimal(gps_latitude, gps_latitude_ref)
-            lon = ExifExtractor._convert_to_decimal(gps_longitude, gps_longitude_ref)
+            # Extract altitude
+            altitude = None
+            if 6 in gps_ifd:  # GPSAltitude
+                alt_value = gps_ifd[6]
+                if isinstance(alt_value, tuple):
+                    altitude = alt_value[0] / alt_value[1]
+                else:
+                    altitude = float(alt_value)
+                    
+                # Handle altitude reference (0 = above sea level, 1 = below)
+                if 5 in gps_ifd and gps_ifd[5] == b'\x01':
+                    altitude = -altitude
             
-            # Validate coordinates
-            if lat is None or lon is None:
-                return None, None
+            # Extract GPS timestamp
+            timestamp = None
+            if 7 in gps_ifd:  # GPSTimeStamp
+                time_tuple = gps_ifd[7]
+                if len(time_tuple) == 3:
+                    hour = int(time_tuple[0])
+                    minute = int(time_tuple[1])
+                    second = int(time_tuple[2])
+                    timestamp = f"{hour:02d}:{minute:02d}:{second:02d}"
             
-            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-                return None, None
+            # Extract GPS datestamp
+            datestamp = None
+            if 29 in gps_ifd:  # GPSDateStamp
+                datestamp = gps_ifd[29]
             
-            # Filter "Null Island" (0, 0)
-            if lat == 0 and lon == 0:
-                return None, None
+            # Extract map datum
+            map_datum = None
+            if 18 in gps_ifd:  # GPSMapDatum
+                map_datum = gps_ifd[18]
             
-            return lat, lon
+            return lat, lon, altitude, timestamp, datestamp, map_datum
             
         except Exception:
-            return None, None
+            return None, None, None, None, None, None
     
     @staticmethod
     def _convert_to_decimal(coord_tuple, ref) -> Optional[float]:

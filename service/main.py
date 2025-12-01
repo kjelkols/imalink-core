@@ -167,6 +167,10 @@ async def process_image_endpoint(
             "exposure_program": camera_settings.exposure_program,
             "metering_mode": camera_settings.metering_mode,
             "white_balance": camera_settings.white_balance,
+            "gps_altitude": metadata.gps_altitude,
+            "gps_timestamp": metadata.gps_timestamp,
+            "gps_datestamp": metadata.gps_datestamp,
+            "gps_map_datum": metadata.gps_map_datum,
         }
         
         # Build image_file_list
