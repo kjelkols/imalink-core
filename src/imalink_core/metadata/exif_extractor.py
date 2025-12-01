@@ -202,6 +202,16 @@ class ExifExtractor:
                 if not exif:
                     return result
                 
+                # Try to get EXIF IFD (most camera settings are here)
+                try:
+                    exif_ifd = exif.get_ifd(0x8769)  # EXIF IFD
+                    # Merge EXIF IFD into main exif dict for easier access
+                    for tag_id, value in exif_ifd.items():
+                        if tag_id not in exif:
+                            exif[tag_id] = value
+                except (KeyError, AttributeError):
+                    pass  # No EXIF IFD, continue with main EXIF
+                
                 # ISO (85%+ reliable)
                 if 34855 in exif:
                     result.iso = exif[34855]
@@ -292,9 +302,19 @@ class ExifExtractor:
                 if not exif:
                     return result
                 
+                # Try to get EXIF IFD (most camera settings are here)
+                try:
+                    exif_ifd = exif.get_ifd(0x8769)  # EXIF IFD
+                    # Merge EXIF IFD into main exif dict for easier access
+                    for tag_id, value in exif_ifd.items():
+                        if tag_id not in exif:
+                            exif[tag_id] = value
+                except (KeyError, AttributeError):
+                    pass  # No EXIF IFD, continue with main EXIF
+                
                 # ISO (80-90% reliable)
                 if 34855 in exif:  # ISOSpeedRatings
-                    result.iso = exif[34855]
+                    result.iso = int(exif[34855])
                 
                 # Aperture (85-90% reliable)
                 if 33437 in exif:  # FNumber
@@ -303,18 +323,17 @@ class ExifExtractor:
                 # Shutter speed (85-90% reliable)
                 if 33434 in exif:  # ExposureTime
                     exp_time = exif[33434]
-                    if isinstance(exp_time, tuple):
-                        result.shutter_speed = f"{exp_time[0]}/{exp_time[1]}"
+                    exp_float = float(exp_time)  # Convert any type to float
+                    # Convert decimal to fraction string for better readability
+                    if exp_float < 1:
+                        result.shutter_speed = f"1/{int(round(1/exp_float))}"
                     else:
-                        result.shutter_speed = f"{float(exp_time)}"
+                        result.shutter_speed = f"{exp_float:.3f}"
                 
                 # Focal length (80-85% reliable)
                 if 37386 in exif:  # FocalLength
                     focal = exif[37386]
-                    if isinstance(focal, tuple):
-                        result.focal_length = focal[0] / focal[1]
-                    else:
-                        result.focal_length = focal
+                    result.focal_length = float(focal)
                 
                 # Lens info (60-70% reliable)
                 if 42036 in exif:  # LensModel
