@@ -18,13 +18,24 @@ uv pip install "imalink-core[raw]"
 
 ## Supported RAW Formats
 
-- **NEF** - Nikon RAW
-- **CR2** - Canon RAW
-- **ARW** - Sony RAW
-- **DNG** - Adobe Digital Negative (universal RAW)
-- **ORF** - Olympus RAW
-- **RW2** - Panasonic RAW
-- **RAF** - Fujifilm RAW
+imalink-core supports **all major RAW formats** through LibRaw (900+ camera models):
+
+**Nikon:** NEF, NRW  
+**Canon:** CR2, CR3 (R5/R6/R7), CRW (older)  
+**Sony:** ARW, SRF, SR2  
+**Fujifilm:** RAF  
+**Olympus/OM System:** ORF  
+**Panasonic:** RW2, RAW  
+**Pentax:** PEF, PTX  
+**Sigma:** X3F (Foveon sensor)  
+**Leica:** RWL, DNG  
+**Minolta:** MRW  
+**Samsung:** SRW (NX-series)  
+**Hasselblad:** 3FR  
+**Kodak:** DCR, KDC  
+**Mamiya:** MEF  
+**Phase One:** IIQ (limited support)  
+**Adobe/Universal:** DNG
 
 ## API Usage
 
@@ -132,17 +143,36 @@ This is expected - RAW files contain unprocessed sensor data that must be:
 
 ## Camera Compatibility
 
-RAW support uses LibRaw (via rawpy), which supports 900+ camera models.
+RAW support uses LibRaw (via rawpy), which supports **900+ camera models** including:
 
-Verified cameras:
-- Nikon D850, D7500, Z6, Z7
-- Canon 5D Mark IV, EOS R, EOS R5
-- Sony A7R III, A7R IV, A9
-- Fujifilm X-T3, X-T4
-- Olympus OM-D E-M1
-- Panasonic Lumix GH5
+**DSLR/Mirrorless:**
+- Nikon D850, D7500, Z6, Z7, Z8, Z9
+- Canon 5D Mark IV, EOS R, EOS R5, EOS R6, EOS R7
+- Sony A7R III, A7R IV, A7R V, A9, A1
+- Fujifilm X-T3, X-T4, X-T5, X-H2, X-Pro3
+- Olympus OM-D E-M1, E-M5 | OM System OM-1
+- Panasonic Lumix GH5, GH6, S5, S1
+- Pentax K-1, K-3
+- Sigma fp, fp L
 
-If your camera's RAW format works with Adobe Lightroom, it will work with imalink-core.
+**Medium Format:**
+- Hasselblad X1D, X2D, 907X
+- Fujifilm GFX 50S, GFX 100
+- Phase One IQ3, IQ4 (limited)
+
+**Compact/Premium:**
+- Leica Q2, Q3, M10, M11
+- Ricoh GR III, GR IIIx
+- Sigma dp Quattro series
+
+**Legacy (2000-2010):**
+- Nikon D70, D200, D300
+- Canon 5D, 7D, 40D, 50D
+- Minolta DiMAGE A2, Alpha 7D
+- Samsung GX-10, GX-20
+- Kodak DCS series
+
+If your camera's RAW format works with Adobe Lightroom or Capture One, it will work with imalink-core.
 
 ## EXIF Data
 

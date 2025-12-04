@@ -25,14 +25,19 @@ class TestRawProcessor:
         # Nikon
         assert RawProcessor.is_raw_file("photo.NEF") is True
         assert RawProcessor.is_raw_file("photo.nef") is True
+        assert RawProcessor.is_raw_file("photo.NRW") is True
         
         # Canon
         assert RawProcessor.is_raw_file("photo.CR2") is True
         assert RawProcessor.is_raw_file("photo.cr2") is True
+        assert RawProcessor.is_raw_file("photo.CR3") is True
+        assert RawProcessor.is_raw_file("photo.CRW") is True
         
         # Sony
         assert RawProcessor.is_raw_file("photo.ARW") is True
         assert RawProcessor.is_raw_file("photo.arw") is True
+        assert RawProcessor.is_raw_file("photo.SRF") is True
+        assert RawProcessor.is_raw_file("photo.SR2") is True
         
         # Adobe/Universal
         assert RawProcessor.is_raw_file("photo.DNG") is True
@@ -43,9 +48,39 @@ class TestRawProcessor:
         
         # Panasonic
         assert RawProcessor.is_raw_file("photo.RW2") is True
+        assert RawProcessor.is_raw_file("photo.RAW") is True
         
         # Fujifilm
         assert RawProcessor.is_raw_file("photo.RAF") is True
+        
+        # Pentax
+        assert RawProcessor.is_raw_file("photo.PEF") is True
+        assert RawProcessor.is_raw_file("photo.PTX") is True
+        
+        # Sigma
+        assert RawProcessor.is_raw_file("photo.X3F") is True
+        
+        # Leica
+        assert RawProcessor.is_raw_file("photo.RWL") is True
+        
+        # Minolta
+        assert RawProcessor.is_raw_file("photo.MRW") is True
+        
+        # Samsung
+        assert RawProcessor.is_raw_file("photo.SRW") is True
+        
+        # Hasselblad
+        assert RawProcessor.is_raw_file("photo.3FR") is True
+        
+        # Kodak
+        assert RawProcessor.is_raw_file("photo.DCR") is True
+        assert RawProcessor.is_raw_file("photo.KDC") is True
+        
+        # Mamiya
+        assert RawProcessor.is_raw_file("photo.MEF") is True
+        
+        # Phase One
+        assert RawProcessor.is_raw_file("photo.IIQ") is True
         
         # Not RAW
         assert RawProcessor.is_raw_file("photo.jpg") is False
@@ -140,33 +175,56 @@ class TestFormatDetectorRAW:
     
     def test_raw_extensions_detected(self):
         """Test that RAW extensions are in supported formats"""
+        # Major brands
         assert '.nef' in FormatDetector.RAW_EXTENSIONS
         assert '.cr2' in FormatDetector.RAW_EXTENSIONS
+        assert '.cr3' in FormatDetector.RAW_EXTENSIONS
         assert '.arw' in FormatDetector.RAW_EXTENSIONS
         assert '.dng' in FormatDetector.RAW_EXTENSIONS
         assert '.orf' in FormatDetector.RAW_EXTENSIONS
         assert '.rw2' in FormatDetector.RAW_EXTENSIONS
         assert '.raf' in FormatDetector.RAW_EXTENSIONS
+        assert '.pef' in FormatDetector.RAW_EXTENSIONS
+        assert '.x3f' in FormatDetector.RAW_EXTENSIONS
+        
+        # Additional formats
+        assert '.rwl' in FormatDetector.RAW_EXTENSIONS
+        assert '.mrw' in FormatDetector.RAW_EXTENSIONS
+        assert '.srw' in FormatDetector.RAW_EXTENSIONS
+        assert '.3fr' in FormatDetector.RAW_EXTENSIONS
+        assert '.iiq' in FormatDetector.RAW_EXTENSIONS
     
     def test_raw_is_supported(self):
         """Test that RAW files are marked as supported"""
         assert FormatDetector.is_supported(Path("photo.NEF")) is True
         assert FormatDetector.is_supported(Path("photo.CR2")) is True
+        assert FormatDetector.is_supported(Path("photo.CR3")) is True
         assert FormatDetector.is_supported(Path("photo.ARW")) is True
         assert FormatDetector.is_supported(Path("photo.DNG")) is True
         assert FormatDetector.is_supported(Path("photo.ORF")) is True
         assert FormatDetector.is_supported(Path("photo.RW2")) is True
         assert FormatDetector.is_supported(Path("photo.RAF")) is True
+        assert FormatDetector.is_supported(Path("photo.PEF")) is True
+        assert FormatDetector.is_supported(Path("photo.X3F")) is True
+        assert FormatDetector.is_supported(Path("photo.3FR")) is True
+        assert FormatDetector.is_supported(Path("photo.IIQ")) is True
     
     def test_raw_format_detection(self):
         """Test RAW format is correctly identified"""
         assert FormatDetector.is_raw_format(Path("photo.NEF")) is True
         assert FormatDetector.is_raw_format(Path("photo.CR2")) is True
+        assert FormatDetector.is_raw_format(Path("photo.CR3")) is True
         assert FormatDetector.is_raw_format(Path("photo.ARW")) is True
         assert FormatDetector.is_raw_format(Path("photo.DNG")) is True
         assert FormatDetector.is_raw_format(Path("photo.ORF")) is True
         assert FormatDetector.is_raw_format(Path("photo.RW2")) is True
         assert FormatDetector.is_raw_format(Path("photo.RAF")) is True
+        assert FormatDetector.is_raw_format(Path("photo.PEF")) is True
+        assert FormatDetector.is_raw_format(Path("photo.X3F")) is True
+        assert FormatDetector.is_raw_format(Path("photo.3FR")) is True
+        assert FormatDetector.is_raw_format(Path("photo.IIQ")) is True
+        assert FormatDetector.is_raw_format(Path("photo.MRW")) is True
+        assert FormatDetector.is_raw_format(Path("photo.SRW")) is True
         
         # Not RAW
         assert FormatDetector.is_raw_format(Path("photo.jpg")) is False

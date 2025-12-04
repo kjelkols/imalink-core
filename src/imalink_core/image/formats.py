@@ -27,18 +27,28 @@ class FormatDetector:
     
     SUPPORTED_EXTENSIONS: Set[str] = {
         '.jpg', '.jpeg', '.png', '.tiff', '.tif',
-        '.nef', '.cr2', '.arw', '.dng', '.orf', '.rw2', '.raf',
+        '.nef', '.nrw', '.cr2', '.cr3', '.crw', '.arw', '.srf', '.sr2',
+        '.raf', '.orf', '.rw2', '.raw', '.pef', '.ptx', '.x3f', '.rwl',
+        '.dng', '.mrw', '.srw', '.3fr', '.dcr', '.kdc', '.mef', '.iiq',
         '.heic', '.webp'
     }
     
     RAW_EXTENSIONS: Set[str] = {
-        '.nef',  # Nikon
-        '.cr2',  # Canon
-        '.arw',  # Sony
-        '.dng',  # Adobe/Universal
-        '.orf',  # Olympus
-        '.rw2',  # Panasonic
+        '.nef', '.nrw',  # Nikon
+        '.cr2', '.cr3', '.crw',  # Canon
+        '.arw', '.srf', '.sr2',  # Sony
         '.raf',  # Fujifilm
+        '.orf',  # Olympus/OM System
+        '.rw2', '.raw',  # Panasonic
+        '.pef', '.ptx',  # Pentax
+        '.x3f',  # Sigma
+        '.rwl', '.dng',  # Leica
+        '.mrw',  # Minolta
+        '.srw',  # Samsung
+        '.3fr',  # Hasselblad
+        '.dcr', '.kdc',  # Kodak
+        '.mef',  # Mamiya
+        '.iiq',  # Phase One
     }
     
     @staticmethod

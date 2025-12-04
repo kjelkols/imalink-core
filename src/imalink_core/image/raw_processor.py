@@ -20,7 +20,40 @@ except ImportError:
 class RawProcessor:
     """Process RAW camera files"""
     
-    RAW_EXTENSIONS = {'.nef', '.cr2', '.arw', '.dng', '.orf', '.rw2', '.raf'}
+    RAW_EXTENSIONS = {
+        # Nikon
+        '.nef', '.nrw',
+        # Canon
+        '.cr2', '.cr3', '.crw',
+        # Sony
+        '.arw', '.srf', '.sr2',
+        # Fujifilm
+        '.raf',
+        # Olympus/OM System
+        '.orf',
+        # Panasonic
+        '.rw2', '.raw',
+        # Pentax
+        '.pef', '.ptx',
+        # Sigma
+        '.x3f',
+        # Leica
+        '.rwl', '.dng',
+        # Minolta
+        '.mrw',
+        # Samsung
+        '.srw',
+        # Hasselblad
+        '.3fr',
+        # Kodak
+        '.dcr', '.kdc',
+        # Mamiya
+        '.mef',
+        # Phase One
+        '.iiq',
+        # Adobe/Universal
+        '.dng',
+    }
     
     @staticmethod
     def is_available() -> bool:

@@ -13,7 +13,7 @@ ImaLink Core is a FastAPI HTTP service that provides all image processing functi
 - **Preview generation** - Generate hotpreview (150x150) and coldpreview (variable size) thumbnails
 - **Hothash calculation** - SHA256-based perceptual duplicate detection
 - **Image validation** - Format detection and file validation
-- **RAW format support** - Process NEF, CR2, ARW, DNG, ORF, RW2, RAF files (optional, see [RAW_SUPPORT.md](RAW_SUPPORT.md))
+- **RAW format support** - Process 900+ camera models (NEF, CR2, CR3, ARW, RAF, ORF, PEF, DNG, etc.) - see [RAW_SUPPORT.md](RAW_SUPPORT.md)
 - **Base64 encoding** - All image data uses Base64 for JSON compatibility (industry standard)
 - **Language-agnostic** - HTTP API works with any programming language
 
